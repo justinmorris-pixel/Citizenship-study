@@ -95,6 +95,13 @@ const S = {
     runAgain: 'Run again',
     gateOk: 'Correct! Keep running!',
     pickAnswer: 'Pick an answer to keep running.',
+    readAloud: 'Read aloud',
+    stopReading: 'Stop',
+    autoRead: 'Read questions automatically',
+    slowRead: 'Slower voice',
+    noVoice: 'This device has no {l} voice installed, so the reading may sound wrong. Try Google Chrome, or add a voice in your device speech settings.',
+    englishWord: 'English',
+    spanishWord: 'Spanish',
   },
   es: {
     appTitle: 'Estudio del Examen de Ciudadanía',
@@ -192,6 +199,13 @@ const S = {
     runAgain: 'Correr otra vez',
     gateOk: '¡Correcto! ¡Sigue corriendo!',
     pickAnswer: 'Elige una respuesta para seguir corriendo.',
+    readAloud: 'Leer en voz alta',
+    stopReading: 'Detener',
+    autoRead: 'Leer las preguntas automáticamente',
+    slowRead: 'Voz más lenta',
+    noVoice: 'Este dispositivo no tiene una voz en {l}, así que la lectura puede sonar mal. Prueba con Google Chrome o agrega una voz en la configuración de voz del dispositivo.',
+    englishWord: 'inglés',
+    spanishWord: 'español',
   },
 }
 

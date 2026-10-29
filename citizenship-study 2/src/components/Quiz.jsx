@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { shuffle } from '../lib/game'
+import { useSpeech, speechText, optionLabel } from '../lib/speech'
+import ReadAloud from './ReadAloud'
 
 export default function Quiz({ t, lang, mode, title, questions, onFinish, onQuit }) {
   const isTest = mode === 'test'
@@ -10,8 +12,16 @@ export default function Quiz({ t, lang, mode, title, questions, onFinish, onQuit
   const [combo, setCombo] = useState(0)
   const [peek, setPeek] = useState(false)
 
+  const speech = useSpeech(lang)
   const q = questions[i]
   const order = orders[i]
+  const spoken = speechText(q, lang, order)
+
+  // read each new question aloud if the student turned on automatic reading
+  useEffect(() => {
+    if (speech.auto) speech.speak(spoken)
+    else speech.stop()
+  }, [i, lang]) // eslint-disable-line
   const other = lang === 'en' ? 'es' : 'en'
   const revealed = !isTest && sel !== null
   const last = i + 1 >= questions.length
@@ -36,7 +46,7 @@ export default function Quiz({ t, lang, mode, title, questions, onFinish, onQuit
   }
 
   function quit() {
-    if (window.confirm(t('quitConfirm'))) onQuit()
+    if (window.confirm(t('quitConfirm'))) { speech.stop(); onQuit() }
   }
 
   function optionClass(o) {
@@ -66,7 +76,9 @@ export default function Quiz({ t, lang, mode, title, questions, onFinish, onQuit
       <div className="bg-white rounded-2xl shadow p-5">
         <h2 className="text-xl sm:text-2xl font-bold leading-snug">{q[lang].q}</h2>
 
-        <button onClick={() => setPeek(p => !p)} className="mt-2 text-sm text-blue-700 hover:underline">
+        <ReadAloud speech={speech} text={spoken} t={t} lang={lang} />
+
+        <button onClick={() => setPeek(p => !p)} className="mt-3 text-sm text-blue-700 hover:underline">
           🌐 {peek ? t('hideOther') : t('showOther')}
         </button>
         {peek && (
@@ -81,6 +93,9 @@ export default function Quiz({ t, lang, mode, title, questions, onFinish, onQuit
         <div className="mt-4 space-y-2">
           {order.map(o => (
             <button key={o} onClick={() => choose(o)} className={optionClass(o)}>
+              {optionLabel(q[lang].options[o], order.indexOf(o)) && (
+                <span className="font-bold text-slate-400 mr-2">{optionLabel(q[lang].options[o], order.indexOf(o))}.</span>
+              )}
               {q[lang].options[o]}
             </button>
           ))}

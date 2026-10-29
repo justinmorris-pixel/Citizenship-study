@@ -4,6 +4,8 @@ import { TOPICS, levelInfo, statsMap, weightedSample, shuffle } from '../lib/gam
 import { RUN_GATE_EVERY, RUN_FIRST_GATE_AFTER } from '../config'
 import { createState, step, jump, answerGate, score as calcScore, W, H, STEP } from '../game/runner'
 import { draw, drawHero, HEROES } from '../game/draw'
+import { useSpeech, speechText, optionLabel } from '../lib/speech'
+import ReadAloud from './ReadAloud'
 import LangToggle from './LangToggle'
 
 function HeroPreview({ hero, locked }) {
@@ -22,6 +24,7 @@ function HeroPreview({ hero, locked }) {
 }
 
 export default function RunnerGame({ t, lang, setLang, profile, onSave, onExit }) {
+  const speech = useSpeech(lang)
   const stats = useMemo(() => statsMap(profile.stats), [profile])
   const level = levelInfo(profile.student.xp).level
   const bestStored = useMemo(
@@ -97,6 +100,7 @@ export default function RunnerGame({ t, lang, setLang, profile, onSave, onExit }
     if (phaseRef.current !== 'question' || picked) return
     const q = question.q
     const correct = idx === q.answer
+    speech.stop()
     answersRef.current = [...answersRef.current, { q: q.id, c: correct }]
     setPicked({ idx, correct })
     answerGate(gameRef.current, correct)
@@ -117,6 +121,7 @@ export default function RunnerGame({ t, lang, setLang, profile, onSave, onExit }
     if (phaseRef.current === 'playing' || phaseRef.current === 'question') {
       if (!window.confirm(t('quitConfirm'))) return
       clearTimeout(timerRef.current)
+      speech.stop()
       const answers = answersRef.current
       phaseRef.current = 'over'
       if (answers.length > 0) saveRef.current('run', answers, calcScore(gameRef.current))
@@ -158,6 +163,15 @@ export default function RunnerGame({ t, lang, setLang, profile, onSave, onExit }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
   }, [phase === 'setup']) // eslint-disable-line
+
+  // read each question gate aloud if the student turned on automatic reading
+  useEffect(() => {
+    if (phase === 'question' && question) {
+      if (speech.auto) speech.speak(speechText(question.q, lang, question.order))
+    } else {
+      speech.stop()
+    }
+  }, [phase, question?.q.id, lang]) // eslint-disable-line
 
   // keyboard
   useEffect(() => {
@@ -258,7 +272,8 @@ export default function RunnerGame({ t, lang, setLang, profile, onSave, onExit }
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl max-h-[92vh] overflow-y-auto p-5">
             <p className="text-xs font-bold uppercase tracking-wide text-red-600">🚧 {t('questionGate')}</p>
             <h2 className="text-xl sm:text-2xl font-bold leading-snug mt-1">{q[lang].q}</h2>
-            <button onClick={() => setPeek(p => !p)} className="mt-1 text-sm text-blue-700 hover:underline">
+            <ReadAloud speech={speech} text={speechText(q, lang, question.order)} t={t} lang={lang} />
+            <button onClick={() => setPeek(p => !p)} className="mt-2 text-sm text-blue-700 hover:underline">
               🌐 {peek ? t('hideOther') : t('showOther')}
             </button>
             {peek && (
@@ -279,6 +294,9 @@ export default function RunnerGame({ t, lang, setLang, profile, onSave, onExit }
                 }
                 return (
                   <button key={o} onClick={() => answer(o)} className={`w-full text-left rounded-xl border-2 px-4 py-3 text-base sm:text-lg transition ${cls}`}>
+                    {optionLabel(q[lang].options[o], question.order.indexOf(o)) && (
+                      <span className="font-bold text-slate-400 mr-2">{optionLabel(q[lang].options[o], question.order.indexOf(o))}.</span>
+                    )}
                     {q[lang].options[o]}
                   </button>
                 )
